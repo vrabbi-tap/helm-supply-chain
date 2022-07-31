@@ -1,0 +1,31 @@
+apiVersion: carto.run/v1alpha1
+kind: Workload
+metadata:
+  labels:
+    app.kubernetes.io/part-of: helm-demo-app
+  name: helm-demo-app
+  namespace: default
+spec:
+  source:
+    git:
+      ref:
+        branch: main
+      url: https://github.com/sample-accelerators/tanzu-java-web-app
+  params:
+  - name: chart_name
+    value: java-web-app
+  - name: chart_version
+    value: 0.1.1
+  - name: chart_values
+    value:
+      autoscaling:
+        enabled: true
+        minReplicas: 3
+      image:
+        pullPolicy: IfNotPresent
+      service:
+        type: LoadBalancer
+  - name: chart_repo
+    value:
+      kind: HelmRepository
+      name: demo-repo

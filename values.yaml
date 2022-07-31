@@ -1,0 +1,32 @@
+#@data/values
+---
+registry:
+  server:
+  repository:
+  ca_cert_data: ""
+
+maven:
+  repository:
+    url: "https://repo.maven.apache.org/maven2"
+    secret_name:
+
+gitops:
+  repository_prefix:
+  branch: main
+  user_name: supplychain
+  user_email: supplychain
+  commit_message: supplychain@cluster.local
+  ssh_secret: git-ssh
+  commit_strategy: direct
+  server_address:
+  repository_owner:
+  repository_name:
+  pull_request:
+    server_kind:
+    commit_branch: ""
+    pull_request_title:
+    pull_request_body:
+
+cluster_builder: default
+service_account: default
+git_implementation: go-git
