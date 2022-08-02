@@ -37,7 +37,7 @@ tanzu package install -n tap-extra-packages fluxcd-helm-controller -p helm-contr
 
 ### Configuring a Helm Repository
 
-Once we have FluxCD installed, we can create a HelmRepository resource to allow discovery and usage of the relevant charts. For this example we will use a demo repo i have hosted via Github Pages in this repository under the docs folder:
+Once we have FluxCD installed, we can create a HelmRepository resource to allow discovery and usage of the relevant charts. For this example we will use a demo repo i have hosted on github:
 
 ```bash
 kubectl apply -f example/helm-repo.yaml
@@ -70,3 +70,12 @@ To test out the new supply chain, we can use the example workload in this repo
 ```bash
 tanzu apps workload apply -f example/workload.yaml
 ```
+
+### Configurable Parameters on a workload
+| Parameter      | Required | Field type | Description                                                                                                                                                                                                    | Example                                                                                                      |
+|----------------|----------|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| chart_name     | yes      | string     | Name of the helm chart to use                                                                                                                                                                                  | java-web-app                                                                                                 |
+| chart_version  | no       | string     | The Chart version to use.<br>If not defined, the latest version will be used                                                                                                                                   | 0.1.1                                                                                                        |
+| chart_repo     | yes      | object     | The reference to a FluxCD HelmRepository CRD where the chart exists.<br>Defining the namespace is optional.<br>When not defined it will default to the workloads namespace                                     | kind: HelmRepository<br>name: demo-repo<br>namespace: helm-system                                            |
+| image_key_path | no       | string     | The helm value path where the image reference should be updated.<br>If not defined, the field will be defaulted to "image.repository".<br>If the path contains a "." in one of the keys, escape it via a "\\". | java-app.image.repository                                                                                    |
+| chart_values   | no       | object     | The additional chart values you want to set for the deployment.<br>The image reference will be merged with these values at config generation time.                                                             | autoscaling:<br>&nbsp;&nbsp;enabled: true<br>&nbsp;&nbsp;minReplicas: 3<br>&nbsp;&nbsp;maxReplicas: 10<br>service:<br>&nbsp;&nbsp;type: LoadBalancer |

@@ -20,8 +20,6 @@ spec:
   selectorMatchFields:
   - key: spec.params[?(@.name=="chart_name")]
     operator: Exists
-  - key: spec.params[?(@.name=="chart_values")]
-    operator: Exists
   - key: spec.params[?(@.name=="chart_repo")]
     operator: Exists
 

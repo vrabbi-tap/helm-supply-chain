@@ -14,6 +14,7 @@ spec:
     #@ load("@ytt:yaml", "yaml")
     #@ load("@ytt:struct", "struct")
     #@ load("@ytt:overlay", "overlay")
+    #@ load("@ytt:regexp", "regexp")
 
     #@ def merge_labels(fixed_values):
     #@   labels = {}
@@ -23,7 +24,6 @@ spec:
     #@   labels.update(fixed_values)
     #@   return labels
     #@ end
-
     #@ def is_monorepo_approach():
     #@   if 'gitops_server_address' in data.values.params and 'gitops_repository_owner' in data.values.params and 'gitops_repository_name' in data.values.params:
     #@     return True
@@ -35,7 +35,6 @@ spec:
     #@   end
     #@   return False
     #@ end
-
     #@ def has_git_params():
     #@   if 'gitops_repository_prefix' in data.values.params:
     #@     return True
@@ -47,25 +46,21 @@ spec:
     #@
     #@   return False
     #@ end
-
     #@ def is_gitops():
     #@   return is_monorepo_approach() or has_git_params()
     #@ end
-
     #@ def param(key):
     #@   if not key in data.values.params:
     #@     return None
     #@   end
     #@   return data.values.params[key]
     #@ end
-
     #@ def strip_trailing_slash(some_string):
     #@   if some_string[-1] == "/":
     #@     return some_string[:-1]
     #@   end
     #@   return some_string
     #@ end
-
     #@ def mono_repository():
     #@   strip_trailing_slash(data.values.params.gitops_server_address)
     #@   return "/".join([
@@ -74,7 +69,6 @@ spec:
     #@     data.values.params.gitops_repository_name,
     #@   ]) + ".git"
     #@ end
-
     #@ def git_repository():
     #@   if is_monorepo_approach():
     #@     return mono_repository()
@@ -87,7 +81,6 @@ spec:
     #@   prefix = param("gitops_repository_prefix")
     #@   return prefix + data.values.workload.metadata.name + ".git"
     #@ end
-
     #@ def image():
     #@   return "/".join([
     #@    data.values.params.registry.server,
@@ -100,23 +93,45 @@ spec:
     #@   ]) + ":" + data.values.workload.metadata.uid
     #@ end
 
-    #@ def chart_values():
-    #@ if hasattr(data.values.params, "chart_values"):
-    #@overlay/match-child-defaults missing_ok=True
-    #@ chart_values_computed = overlay.apply(data.values.params,image_path())
-    #@ return struct.encode(yaml.decode(yaml.encode(chart_values_computed))).chart_values
-    #@ else:
-    #@ return struct.encode(yaml.decode(yaml.encode(image_path()))).chart_values
+
+    #@ def as_dict(parts, leaf):
+    #@   if len(parts) == 0:
+    #@     return leaf
+    #@   end
+    #@   return {parts[0]: as_dict(parts[1:], leaf)}
     #@ end
+    #@ def split_dot_path(path):
+    #@   # "replace any dot that does NOT have a leading slash with ':::'
+    #@   path = regexp.replace("([^\\\])\.", path, "$1:::")
+    #@   path = path.replace("\.", ".")   # consume escaping of '.'
+    #@   return path.split(":::")
     #@ end
 
     #@ def image_path():
+    #@  if hasattr(data.values.params, "image_key_path"):
+    #@    return data.values.params.image_key_path
+    #@  else:
+    #@    return "image.repository"
+    #@  end
+    #@ end
+    #@ chart_config = as_dict(split_dot_path(image_path()), data.values.images.image.image)
+
+    #@ config_source = data.values.params
+    #@ def chart_overrides():
+    #@ return data.values.params
+    #@ end
+
+    #@ def image_override():
     #@overlay/match-child-defaults missing_ok=True
-    chart_values:
-      #@overlay/match-child-defaults missing_ok=True
-      image:
-        #@overlay/match-child-defaults missing_ok=True
-        repository: #@ data.values.images.image.image
+    chart_values: #@ chart_config
+    #@ end
+
+    #@ def chart_values():
+    #@ if hasattr(data.values.params, "chart_values"):
+    #@ return struct.encode(yaml.decode(yaml.encode(overlay.apply(chart_overrides(), image_override())))).chart_values
+    #@ else:
+    #@ return struct.encode(yaml.decode(yaml.encode(image_override()))).chart_values
+    #@ end
     #@ end
 
     #@ def helm_release():
@@ -150,6 +165,6 @@ spec:
     kind: ConfigMap
     metadata:
       name: #@ "{}-helm-release".format(data.values.workload.metadata.name)
-    labels: #@ merge_labels({ "app.kubernetes.io/component": "config" })
+      labels: #@ merge_labels({ "app.kubernetes.io/component": "config" })
     data:
       helm-release.yaml: #@ yaml.encode(helm_release())
