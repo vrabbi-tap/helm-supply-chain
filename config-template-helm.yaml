@@ -128,9 +128,9 @@ spec:
 
     #@ def chart_values():
     #@ if hasattr(data.values.params, "chart_values"):
-    #@ return struct.encode(yaml.decode(yaml.encode(overlay.apply(chart_overrides(), image_override())))).chart_values
+    #@ return overlay.apply(chart_overrides(), image_override())["chart_values"]
     #@ else:
-    #@ return struct.encode(yaml.decode(yaml.encode(image_override()))).chart_values
+    #@ return image_override()["chart_values"]
     #@ end
     #@ end
 
