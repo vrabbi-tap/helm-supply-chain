@@ -58,7 +58,7 @@ spec:
     #@ end
     
     #! generate the yaml config for the image oath in the chart values
-    #@ chart_config = as_dict(split_dot_path(image_path()), data.values.images.image.image)
+    #@ chart_config = as_dict(split_dot_path(image_path()), data.values.config.spec.containers[0].image)
     
     #! Define a function that returns the parameters supplied via carotgrapher
     #@ def chart_overrides():
